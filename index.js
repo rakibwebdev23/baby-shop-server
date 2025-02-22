@@ -30,58 +30,6 @@ async function run() {
     const cartsCollection = client.db("babyShopDB").collection("carts");
 
 
-    app.post("/jwt", async (req, res) => {
-      const user = req.body;
-      const token = jwt.sign(user, process.env.JWT_ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-      res.send({ token });
-    });
-
-    // token related middleware 
-    const verifyToken = (req, res, next) => {
-      if (!req.headers.authorization) {
-        return res.status(401).send({ message: "unauthorized access" });
-      }
-      const token = req.headers.authorization.split(' ')[1];
-      jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET, function (error, decoded) {
-        if (error) {
-          return res.status(401).send({ message: 'unauthorized access' });
-        }
-        req.decoded = decoded;
-        next();
-      })
-    };
-
-    const verifyAdmin = async (req, res, next) => {
-      const email = req.decoded.email;
-      const query = { email: email };
-      const user = await usersCollection.findOne(query);
-      const isAdmin = user?.role === 'admin';
-      if (!isAdmin) {
-        return res.status(403).send({ message: 'forbidden access' });
-      }
-      next();
-    }
-
-    // Users related api
-    app.get("/users", async (req, res) => {
-      const result = await usersCollection.find().toArray();
-      res.send(result);
-    });
-
-    app.get("/users/admin/:email", verifyToken, async (req, res) => {
-      const email = req.params.email;
-      if (email !== req.decoded.email) {
-        return res.status(403).send({ message: 'forbidden access' });
-      }
-      const query = { email: email }
-      const user = await usersCollection.findOne(query);
-      let admin = false;
-      if (user) {
-        admin = user?.role === 'admin'
-      }
-      res.send({ admin });
-    });
-
     // User related endpoints
       app.post('/users', async (req, res) => {
         const user = req.body;
@@ -93,26 +41,6 @@ async function run() {
         const result = await usersCollection.insertOne(user);
         res.send(result);
       });
-    
-    // make admin route 
-    app.patch("/users/admin/:id",verifyToken,verifyAdmin, async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const updatedDoc = {
-        $set: {
-          role: "admin"
-        }
-      }
-      const result = await usersCollection.updateOne(filter, updatedDoc);
-      res.send(result);
-    });
-
-    app.delete("/users/:id",verifyToken, verifyAdmin, async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) }
-      const result = await usersCollection.deleteOne(query);
-      res.send(result);
-    });
     
       //   products endPoints
       app.get("/products", async (req, res) => {
