@@ -29,7 +29,7 @@ async function run() {
     const usersCollection = client.db("babyShopDB").collection("users");
     const cartsCollection = client.db("babyShopDB").collection("carts");
     const paymentsCollection = client.db("babyShopDB").collection("payments");
-
+    const contactCollection = client.db("babyShopDB").collection("contact");
 
     // User related endpoints
       app.post('/users', async (req, res) => {
@@ -74,6 +74,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await cartsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // contact endpoint
+    app.post("/contact", async (req, res) => { 
+      const message = req.body;
+      const result = await contactCollection.insertOne(message);
       res.send(result);
     });
 
