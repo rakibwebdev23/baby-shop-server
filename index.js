@@ -28,6 +28,7 @@ async function run() {
     const productsCollection = client.db("babyShopDB").collection("products");
     const usersCollection = client.db("babyShopDB").collection("users");
     const cartsCollection = client.db("babyShopDB").collection("carts");
+    const paymentsCollection = client.db("babyShopDB").collection("payments");
 
 
     // User related endpoints
@@ -67,6 +68,26 @@ async function run() {
       const item = req.body;
       const result = await cartsCollection.insertOne(item);
       res.send(result);
+    });
+
+    app.delete("/carts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // payment related endpoint 
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentsCollection.insertOne(payment);
+      const query = {
+        _id: {
+            $in: payment.cartId.map(id => new ObjectId(id))
+        }
+    }
+      const deleteResult = await cartsCollection.deleteMany(query);
+      res.send({ paymentResult, deleteResult });
     });
 
     // Send a ping to confirm a successful connection
